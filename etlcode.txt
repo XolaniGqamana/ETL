@@ -1,0 +1,152 @@
+/*
+    ETL (pseudo) code
+    
+    Obtain STTM document
+    Ontain ERD Diagram showing table relationships
+    
+    *************
+    Source tables
+    *************
+    1. dm_sti.aicpsgpolicy
+    2. dm_sti.AICProduct
+    
+    ************
+    Lookup Table 
+    ************
+    LOOKUP_GEN_TABLE_2021 
+*/
+
+
+-- Create desination table (ACCOUNT) based on STTM
+
+
+CREATE TABLE ACCOUNT 
+(
+  	ACCOUNT_BALANCE					DECIMAL(38,18),
+	ACCOUNT_NUMBER					VARCHAR(25),
+	SOURCE_ACCOUNT_STATUS_CODE		VARCHAR(20),
+	PRODUCT_STATUS					VARCHAR(70),
+	SOURCE_ACCOUNT_TYPE_CODE		VARCHAR(70),
+	CLOSED_DATE						DATE,
+	INFORMATION_DATE				DATE,
+	OPEN_DATE						DATE,
+	SITE_CODE						VARCHAR(10),
+	PRODUCT_CODE					VARCHAR(10),
+	SOURCE_CODE						VARCHAR(10),
+	ACCOUNT_TYPE_CODE				VARCHAR(20),
+	PRODUCT							VARCHAR(70),
+	ACCOUNT_STATUS_CODE				VARCHAR(6),
+	ACCOUNT_STATUS					VARCHAR(70),
+	SOURCE_SYSTEM					VARCHAR(70),
+    SOURCE							VARCHAR(70),
+    SITE							VARCHAR(70),
+    SUB_PRODUCT						VARCHAR(70),
+    ACCOUNT_TYPE					VARCHAR(70),
+    SUB_PRODUCT_CODE				VARCHAR(20),
+    PRODUCT_SUB_STATUS				VARCHAR(35),
+    PRE_PAYMENT_AMOUNT				DECIMAL(38,10),
+    OVERDRAFT_INDICATOR				BIGINT,
+    COLLECTIONS_STATUS_CODE			VARCHAR(10),
+    COLLECTIONS_STATUS				VARCHAR(150),
+    MATURITY_DATE					DATE,
+    COVER_EFFECTIVE_TO_DATE			DATE,
+    LAPSED_DATE						DATE,
+    CANCELLED_DATE					DATE,
+    POLICY_ACTION					VARCHAR(20),
+    MONTHLY_PREMIUM					DECIMAL(38,18),
+    INSURED_COVER_AMOUNT			DECIMAL(38,18),
+    CIF_CUSTOMER_KEY				VARCHAR(10),
+    SOURCE_CUSTOMER_KEY				VARCHAR(20),
+    SINGLE_UNIQUE_CUSTOMER_KEY		VARCHAR(20),
+    NON_CIF_CUSTOMER_KEY			VARCHAR(20),
+    ID_NUMBER						VARCHAR(20),
+    COMPANY_REGISTRATION_NUMBER		VARCHAR(20),
+    PASSPORT_NUMBER					VARCHAR(20),
+    EXCEPTION_INDICATOR				INT 
+  );
+/*
+	Loading from Source to destination, including transformation.
+	The INSERT Statement assumes that the tables dm_sti.aicpsgpolicy, dm_sti.AICProduct and LOOKUP_GEN_TABLE_2021 
+*/
+
+  INSERT INTO ACCOUNT 
+  (
+    ACCOUNT_NUMBER, SOURCE_ACCOUNT_STATUS_CODE, PRODUCT_STATUS, SOURCE_ACCOUNT_TYPE_CODE,
+    CLOSED_DATE, INFORMATION_DATE, OPEN_DATE, SITE_CODE, PRODUCT_CODE, SOURCE_CODE,
+    ACCOUNT_TYPE_CODE, PRODUCT, ACCOUNT_STATUS_CODE, ACCOUNT_STATUS, SOURCE_SYSTEM, 
+    SOURCE, SITE, SUB_PRODUCT, ACCOUNT_TYPE, SUB_PRODUCT_CODE, PRODUCT_SUB_STATUS,
+    PRE_PAYMENT_AMOUNT, OVERDRAFT_INDICATOR, COLLECTIONS_STATUS_CODE, COLLECTIONS_STATUS,
+    MATURITY_DATE, COVER_EFFECTIVE_TO_DATE, LAPSED_DATE, CANCELLED_DATE, POLICY_ACTION,
+    MONTHLY_PREMIUM, INSURED_COVER_AMOUNT, CIF_CUSTOMER_KEY, SOURCE_CUSTOMER_KEY,
+    SINGLE_UNIQUE_CUSTOMER_KEY, NON_CIF_CUSTOMER_KEY, ID_NUMBER, COMPANY_REGISTRATION_NUMBER,
+    PASSPORT_NUMBER, EXCEPTION_INDICATOR
+  )
+  
+  SELECT  
+  	0, 
+    lpad(to_char(concat(POLICY_NUMBER),'0',25)),
+    POLICY_STATUS,
+    UPPER(POLICY_STATUS),
+    ProductDescription,
+    CASE 
+    	WHEN policy_status = 'ACTIVE' THEN NULL
+        WHEN CASE (cancelled_date as date) < cover_effective_to_date AND CAST(cancelled_date as date) NOT IN ("1900-06-01","1900-01-01","9999-12-31") THEN CAST (cancelled_date as date) 
+        ELSE cover_effective_to_date
+     END,
+     EXTRACT_DATE,
+     INCEPTION_DATE,
+     '0000',
+     SOURCE_DATA,
+     SOURCE_DATA,
+     DERIVED_FIELD,
+     DERIVED_FIELD,
+     SOURCE_DATA,
+     SOURCE,
+     'NULL', 
+     ProductDescription,
+     'NULL',
+     'NULL',
+     'NULL',
+     'NULL',
+     'NULL',
+     'NULL',
+     'NULL',
+     'NULL',
+     'NULL',
+     'NULL',
+     'NULL',
+     COVER_EFFECTIVE_TO_DATE,
+     LAPSED_DATE,
+     CANCELLED_DATE,
+     POLICY_ACTION,
+     total_premium_amt,
+     total_sum_insured,
+     clcaa521,
+     clcsa521,
+     CUSTOMER_KEY,
+     <derived>,
+     idnumber,
+     companyregnumber,
+     passportnumber,
+     'NULL'
+FROM 
+	dm_sti.aicpsgpolicy LEFT JOIN dm_sti.AICProduct 
+ON AICProduct.SubProduct = aicpsgpolicy.SUB_PRODUCT_CODE  
+AND  AICProduct.System = aicpsgpolicy.SOURCE_DATA
+LEFT JOIN LOOKUP_GEN_TABLE_2021 
+on product_code = LOOKUP_GEN_TABLE_2021.product_code
+where = (enceladus_info_date ='31Dec2019'd))
+AND POLICY_ STATUS NOT IN ('Pending','Quote', 'Not Taken Up','External Quote');
+
+/*
+fOR ALL DERIVED COLUMNS IN ACCOUNT TABLE
+UPDATE COLUMNS BASED ON RULES IN THE STTM
+FOR EXAMPLE, THE PRODUCT COLUMN
+*/
+UPDATE ACCOUNT 
+SET PRODUCT = D11 
+LEFT JOIN LOOKUP_GEN_TABLE_2021 
+ON product_code = LOOKUP_GEN_TABLE_2021.product_code
+
+
+
